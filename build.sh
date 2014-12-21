@@ -16,11 +16,12 @@ function create_builder_params() {
         "--format" "qcow2"
         "--size" "${IMAGE_SIZE}G"
         "--root-password" "password:vagrant"
-        "--run-command" "useradd vagrant"
         "--password" "vagrant:password:vagrant"
-        "--write" "/etc/sudoers.d/90-vagrant:vagrant ALL=(ALL) NOPASSWD:ALL"
-        "--run-command" "sed -i -r 's/.*UseDNS.*/UseDNS no/' /etc/ssh/sshd_config"
-        "--install" "rsync"
+        "--write" "/root/vagrant_pub_key:$VAGRANT_PUB_KEY"
+        "--install" "rsync,nfs-utils"  # for Vagrant file transfer
+        "--run-command" "yum -y update"
+        "--run-command" "yum clean all"
+        "--run" "files/prepare_vm.sh"
         "--run-command" "touch /.autorelabel"
     )
 }
@@ -30,6 +31,16 @@ function create_box() {
     sed -i -e "s/__IMAGE_SIZE__/$IMAGE_SIZE/" "$TMP_DIR/metadata.json"
 
     cp "$TEMPLATES_DIR/Vagrantfile" "$TMP_DIR/Vagrantfile"
+
+    # run the image to perform SELinux relabel
+    qemu-system-x86_64 \
+       -no-reboot \
+       -nographic \
+       -machine accel=kvm:tcg \
+       -cpu host \
+       -m 2048 \
+       -drive file="$TMP_DIR/built.qcow2,if=virtio" \
+       -serial null
 
     # minify the image
     qemu-img convert -O qcow2 "$TMP_DIR/built.qcow2" "$TMP_DIR/box.img"
@@ -49,6 +60,10 @@ function validate_variables() {
     fi
     if [ ! -v IMAGE_SIZE ]; then
         echo "Variable IMAGE_SIZE must be set."
+        exit 1
+    fi
+    if [ ! -v IMAGE_SIZE ]; then
+        echo "Variable VAGRANT_PUB_KEY must be set."
         exit 1
     fi
 }
