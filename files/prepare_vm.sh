@@ -1,4 +1,4 @@
-useradd vagrant -m -d /home/vagrant
+useradd vagrant -u 5000 -m -d /home/vagrant
 
 echo "Defaults !requiretty
 vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-vagrant
