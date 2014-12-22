@@ -17,7 +17,7 @@ function create_builder_params() {
         "--size" "${IMAGE_SIZE}G"
         "--root-password" "password:vagrant"
         "--password" "vagrant:password:vagrant"
-        "--write" "/root/vagrant_pub_key:$VAGRANT_PUB_KEY"
+        "--write" "/root/vagrant_pub_key:${VAGRANT_PUB_KEY}"
         "--install" "rsync,nfs-utils"  # for Vagrant file transfer
         "--run-command" "yum -y update"
         "--run-command" "yum clean all"
@@ -62,10 +62,13 @@ function validate_variables() {
         echo "Variable IMAGE_SIZE must be set."
         exit 1
     fi
-    if [ ! -v IMAGE_SIZE ]; then
+    if [ ! -v VAGRANT_PUB_KEY ]; then
         echo "Variable VAGRANT_PUB_KEY must be set."
         exit 1
     fi
+
+    # make sure there's a trailing newline in VAGRANT_PUB_KEY
+    VAGRANT_PUB_KEY="${VAGRANT_PUB_KEY%'\n'}"$'\n'
 }
 
 function prepare() {
