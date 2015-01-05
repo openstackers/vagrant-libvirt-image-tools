@@ -7,18 +7,21 @@ set -x  # unlock dev mode here!
 DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 source "$DIR/lib/common.sh"
 
-function create_builder_params() {
-    BUILDER_PARAMS=(
-        "$OS_VERSION"
-        "--output" "$TMP_DIR/built.qcow2"
+VAGRANT_PUB_KEY="${VAGRANT_PUB_KEY:-ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key}"
+
+function customize_image() {
+    cp "$1" "$TMP_DIR/built.qcow2"
+    virt-customize "${CUSTOMIZE_PARAMS[@]}"
+}
+
+function create_customize_params() {
+    CUSTOMIZE_PARAMS=(
+        "--add" "$TMP_DIR/built.qcow2"
         "--format" "qcow2"
-        "--size" "${IMAGE_SIZE}G"
         "--root-password" "password:vagrant"
         "--password" "vagrant:password:vagrant"
         "--write" "/root/vagrant_pub_key:${VAGRANT_PUB_KEY}"
         "--install" "rsync,nfs-utils"  # for Vagrant file transfer
-        "--run-command" "yum -y update"
-        "--run-command" "yum clean all"
         "--run" "files/prepare_vm.sh"
         "--run-command" "touch /.autorelabel"
     )
@@ -30,16 +33,8 @@ function validate_variables() {
         echo "Variable BOX_NAME must be set."
         exit 1
     fi
-    if [ ! -v OS_VERSION ]; then
-        echo "Variable OS_VERSION must be set."
-        exit 1
-    fi
     if [ ! -v IMAGE_SIZE ]; then
         echo "Variable IMAGE_SIZE must be set."
-        exit 1
-    fi
-    if [ ! -v VAGRANT_PUB_KEY ]; then
-        echo "Variable VAGRANT_PUB_KEY must be set."
         exit 1
     fi
 
@@ -47,31 +42,22 @@ function validate_variables() {
     VAGRANT_PUB_KEY="${VAGRANT_PUB_KEY%'\n'}"$'\n'
 }
 
-function prepare() {
-    mkdir "$OUT_DIR" || true
-    mkdir "$TMP_DIR" || true
-}
-
-function cleanup() {
-    rm -r "$TMP_DIR" || true
-}
-
 function main() {
     if [ $# -ne 1 ]; then
-        echo "Usage: $0 <manifest-path>"
+        echo "Usage: $0 <image-path>"
         exit 1
     fi
 
     if [ ! -e "$1" ]; then
-        echo "Manifest file '$1' not found."
+        echo "Image file '$1' not found."
     fi
 
-    source "$1"
     validate_variables
 
     prepare
-    create_builder_params
-    build_image
+    create_customize_params
+
+    customize_image "$1"
     create_box
     cleanup
 }
