@@ -2,6 +2,7 @@ useradd vagrant -u 5000 -m -d /home/vagrant
 
 echo "Defaults !requiretty
 vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-vagrant
+chmod 0440 /etc/sudoers.d/90-vagrant
 sed -i -r 's/.*UseDNS.*/UseDNS no/' /etc/ssh/sshd_config
 
 mkdir -p /root/.ssh
