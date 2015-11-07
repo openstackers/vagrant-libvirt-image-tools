@@ -8,5 +8,6 @@ VAGRANT_PUB_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eW
 function build_image() {
     virt-builder "${BUILDER_PARAMS[@]}" \
         "--run-command" "yum -y update" \
+        "--install" "rsync,nfs-utils" \
         "--run-command" "yum clean all"
 }

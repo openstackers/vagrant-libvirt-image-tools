@@ -16,7 +16,6 @@ function create_builder_params() {
         "--root-password" "password:vagrant"
         "--password" "vagrant:password:vagrant"
         "--write" "/root/vagrant_pub_key:${VAGRANT_PUB_KEY}"
-        "--install" "rsync,nfs-utils"  # for Vagrant file transfer
         "--run" "files/prepare_vm.sh"
         "--run-command" "touch /.autorelabel"
     )
